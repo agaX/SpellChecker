@@ -11,6 +11,8 @@
     @todo Poprawić proste parsowanie na porządniejsze.
   */
 
+#include "vector.h"
+#include "word_list.h"
 #include "dictionary.h"
 #include <assert.h>
 #include <locale.h>
@@ -18,6 +20,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wctype.h>
+#include <wchar.h>
+
+
 
 /** Makro służące do otrzymania stałej w formie napisu */
 #define str(x)          # x
@@ -268,8 +273,119 @@ int try_process_command(struct dictionary **dict)
   Funkcja main.
   Główna funkcja programu do testowania słownika. 
  */
-int main(void)
-{
+int main(void) {
+ 
+    /*setlocale(LC_ALL, "pl_PL.UTF-8");
+    struct dictionary *dict = dictionary_new();
+
+    wchar_t *word;
+    wchar_t *word2;
+    wchar_t *word3;
+    wchar_t *word4;
+    wchar_t *word5;
+    word = L"agą";
+    word2 = L"agb";
+    word3 = L"agc";
+    word4 = L"agsa";
+    word5 = L"ag";
+
+
+    printf("insert: %d\n", dictionary_insert(dict,word));
+    
+    printf("insert2: %d\n", dictionary_insert(dict,word2));
+    printf("insert2: %d\n", dictionary_insert(dict,word2));
+    printf("insert3: %d\n", dictionary_insert(dict,word3));
+    printf("insert4: %d\n", dictionary_insert(dict,word4));
+    printf("insert5: %d\n", dictionary_insert(dict,word5));
+    printf("insert5: %d\n", dictionary_insert(dict,word5));
+    
+    printf("delete3: %d\n", dictionary_delete(dict,word3));
+    printf("delete: %d\n", dictionary_delete(dict,word));
+    printf("delete2: %d\n", dictionary_delete(dict,word2));
+    printf("delete3: %d\n", dictionary_delete(dict,word3));
+    printf("delete5: %d\n", dictionary_delete(dict,word5));
+    printf("delete4: %d\n", dictionary_delete(dict,word4));
+
+    wchar_t *word6;
+    word6 = L"jgs";
+    printf("delete6: %d\n", dictionary_delete(dict,word6));
+    printf("find: %d\n", dictionary_find(dict,word));
+    printf("find2: %d\n", dictionary_find(dict,word2));
+    printf("find3: %d\n", dictionary_find(dict,word3));
+    printf("find4: %d\n", dictionary_find(dict,word4));
+    printf("find5: %d\n", dictionary_find(dict,word5));
+    printf("find6: %d\n", dictionary_find(dict,word6));
+    printf("insert3: %d\n", dictionary_insert(dict,word3));
+    
+    printf("delete3: %d\n", dictionary_delete(dict,word3));
+    printf("delete4: %d\n", dictionary_delete(dict,word4));
+    
+    for (int i = 0; i < dict->root->vector->size; i++)
+       printf("dupaaa %lc\n", dict->root->vector->data[i]->letter);
+
+    dictionary_done(dict);
+    */
+
+    //*************** TESTOWANIE PLIKÓW *****************//
+    /*FILE *f = fopen("plikus", "r");
+    struct dictionary *dict = dictionary_load(f);
+    fclose(f);
+
+
+    FILE *f2 = fopen("plikus2", "w");
+
+    dictionary_save(dict, f2);
+    fclose(f2);
+
+    printf("delete: %d\n", dictionary_delete(dict,word3));
+
+    printf("find:%d\n", dictionary_find(dict,word2));
+    
+    dictionary_done(dict);*/
+    //**************************************************//
+
+    
+     /*
+    int length = wcslen (word);
+    printf("%d\n", length);    */
+    /*wchar_t c;
+    wchar_t d;
+    c = L'ó';
+    d = L'ś';
+    printf("compare %lc z %lc: %d",c,d,wcscmp(&c,&d));
+ 
+    wprintf(L"pierwsza litera = %lc \n", word[78]);
+ 
+    wchar_t myChar1 = L'ą';
+    //setlocale(LC_CTYPE, "");
+    wprintf(L"char is %lc \n", myChar1);
+ 
+    // declare and initialize a new vector
+ 
+    printf("size: %d\n capacity: %d\n", vector.size, vector.capacity);    */
+    /*for (wchar_t c = 'a'; c <= 'z'; c++) {
+        node = malloc(sizeof(Node));
+        node->letter = c;
+        vector_append(&vector, *node);
+    }*/
+/*
+    //wchar_t *c = "ą";
+    vector_append(&vector, L'ą');
+    vector_append(&vector, L'ó');
+    vector_append(&vector, *"ń");
+    vector_append(&vector, *"ź");
+    printf("size: %d\n capacity: %d\n", vector.size, vector.capacity);
+*/
+    // print out an arbitrary value in the vector
+    //printf("Heres the value at 0: %ls\n", vector_get(&vector, 0));
+    //write_vector(&vector);
+ 
+    // we're all done playing with our vector,
+    // so free its underlying data array
+    //vector_free(&vector);
+ 
+ 
+ 
     setlocale(LC_ALL, "pl_PL.UTF-8");
     struct dictionary *dict = dictionary_new();
     do {} while (try_process_command(&dict));

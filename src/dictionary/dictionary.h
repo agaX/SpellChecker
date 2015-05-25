@@ -9,18 +9,22 @@
     @copyright Uniwersytet Warszawski
     @date 2015-05-10
  */
-
 #ifndef __DICTIONARY_H__
 #define __DICTIONARY_H__
+
+
 
 #include "word_list.h"
 #include <stdbool.h>
 #include <wchar.h>
+#include "vector.h"
 
 /**
   Struktura przechowująca słownik.
   */
-struct dictionary;
+typedef struct dictionary {
+    struct Node *root; 
+} dictionary;
 
 
 /**
@@ -28,7 +32,17 @@ struct dictionary;
   Słownik ten należy zniszczyć za pomocą dictionary_done().
   @return Nowy słownik
   */
-struct dictionary * dictionary_new(void);
+//struct dictionary *dictionary_new(void);
+
+static void dictionary_free(struct dictionary *dict);
+
+static void skip_equal(const wchar_t **a, const wchar_t **b);
+
+static int can_transform_by_delete(const wchar_t *a, const wchar_t *b);
+
+static int can_transform_by_replace(const wchar_t *a, const wchar_t *b);
+
+struct dictionary *dictionary_new(void);
 
 
 /**
@@ -44,6 +58,11 @@ void dictionary_done(struct dictionary *dict);
   @param[in] word Słowo, które należy wstawić do słownika.
   @return 0 jeśli słowo było już w słowniku, 1 jeśli udało się wstawić.
   */
+
+void node_free(struct Node *node);
+
+int where_in_vector(Vector *vector, wchar_t wch);
+
 int dictionary_insert(struct dictionary *dict, const wchar_t* word);
 
 
@@ -62,7 +81,11 @@ int dictionary_delete(struct dictionary *dict, const wchar_t* word);
   @param[in] word Szukane słowo.
   @return Wartość logiczna czy `word` jest w słowniku.
   */
-bool dictionary_find(const struct dictionary *dict, const wchar_t* word);
+
+bool dictionary_find(const struct dictionary *dict, const wchar_t* word); 
+
+
+int dictionary_save_node(const struct Node *node, FILE* stream);
 
 
 /**
@@ -91,5 +114,6 @@ struct dictionary * dictionary_load(FILE* stream);
   */
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
                       struct word_list *list);
+
 
 #endif /* __DICTIONARY_H__ */

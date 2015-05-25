@@ -1,64 +1,123 @@
+// vector.
 #include <stdio.h>
 #include <stdlib.h>
-
 #include "vector.h"
+#include <assert.h>
+#include <locale.h>
+#include <string.h>
+#include <wctype.h>
+#include <wchar.h>
 
-void vectorInit(vector *v) {
-    v->capacity = VECTOR_INIT_CAPACITY;
-    v->total = 0;
-    v->items = malloc(sizeof(void *) * v->capacity);
+
+void vector_init(Vector *vector) {
+  // initialize size and capacity
+  vector->size = 0;
+  vector->capacity = VECTOR_INITIAL_CAPACITY;
+  // allocate memory for vector->data
+  vector->data = malloc(sizeof(Node*)*vector->capacity);
 }
 
-int vectorTotal(vector *v) {
-    return v->total;
+void vector_append(Vector *vector, Node *value) {
+  // make sure there's room to expand into
+  vector_double_capacity_if_full(vector);
+
+  // append the value and increment vector->size
+  vector->data[vector->size++] = value;
 }
 
-static void vectorResize(vector *v, int capacity){
-#ifdef DEBUG_ON
-    printf("vector_resize: %d to %d\n", v->capacity, capacity);
-#endif
 
-    void **items = realloc(v->items, sizeof(void *) * capacity);
-    if (items) {
-        v->items = items;
-        v->capacity = capacity;
-    }
-}
-
-void vectorAdd(vector *v, void *item) {
-    if (v->capacity == v->total)
-        vectorResize(v, v->capacity * 2);
-    v->items[v->total++] = item;
-}
-
-void vectorSet(vector *v, int index, void *item) {
-    if (index >= 0 && index < v->total)
-        v->items[index] = item;
-}
-
-void *vectorGet(vector *v, int index) {
-    if (index >= 0 && index < v->total)
-        return v->items[index];
-    return NULL;
-}
-
-void vectorDelete(vector *v, int index) {
-    if (index < 0 || index >= v->total)
-        return;
-
-    v->items[index] = NULL;
-
-    for (int i = 0; i < v->total - 1; i++) {
-        v->items[i] = v->items[i + 1];
-        v->items[i + 1] = NULL;
+void vector_remove(Vector *vector, Node *node) {
+  //Node *toDelete;
+  //*toDelete = *node;
+  for (int i = 0; i < vector->size; i++) {
+  /*
+    printf("Z vectora : ");
+  for (int i = 0; i < vector->size; i++) {
+    printf("%lc , ", vector->data[i].letter);
+  }
+  printf("\n");
+*/
+    if (vector->data[i]->letter == node->letter) {
+      //printf("USUWAM!!!!\n");
+      //node_free(node);
+      for (int j = i; j < vector->size-1; j++){
+        vector->data[j] = vector->data[j+1];
+      }
+      vector->size--;
+    
+    //printf("A na nodzie nadal jest %lc \n", toDelete->letter);
+    //node_free(toDelete);
     }
 
-    v->total--;
+  }
+  /*printf("Z vectora : ");
+  for (int i = 0; i < vector->size; i++) {
+    printf("%lc , ", vector->data[i].letter);
+  }
+  printf("będę usuwać literę %lc \n", node->letter);
 
-    if (v->total > 0 && v->total == v->capacity / 4)
-        vectorResize(v, v->capacity / 2);
+  for (int i = 0; i < vector->size; i++) {
+
+    if (vector->data[i].letter == node->letter) {
+      //printf("dupa1\n");
+      //free(vector->data[i]);
+      for (int j = i; j < vector->size-1; j++){
+        //printf("dupa1,5\n");
+        vector->data[j] = vector->data[j+1];
+      }
+      
+      vector->size--;
+      
+      //printf("dupa2\n");
+      
+      printf("Vector po usunięciu : ");
+      for (int i = 0; i < vector->size; i++) {
+         printf("%lc , ", vector->data[i].letter);
+      }
+      printf("\n");
+      node_free(node);
+      return 1;
+    }
+  }
+  return 0;*/
 }
 
-void vectorFree(vector *v) {
-    free(v->items);
+void insert_an_index(Vector *vector, Node *node, int index) {
+
+    vector_double_capacity_if_full(vector);
+    //printf("Wrzucamy %lc \n", node->letter);
+    for (int i = vector->size; i > index; i--)
+        vector->data[i] = vector->data[i - 1];
+    vector->data[index] = node;
+    vector->size++;
+}
+/*
+Node vector_get(Vector *vector, int index) {
+  if (index >= vector->size || index < 0) {
+    printf("Index %d out of bounds for vector of size %d\n", index, vector->size);
+    exit(1);
+  }
+  return vector->data[index];
+}
+*/
+
+void vector_double_capacity_if_full(Vector *vector) {
+  if (vector->size >= vector->capacity) {
+    // double vector->capacity and resize the allocated memory accordingly
+    vector->capacity *= 2;
+    vector->data = realloc(vector->data, sizeof(Node) * vector->capacity);
+  }
+}
+
+void write_vector(Vector *vector) {
+    for (int i = 0; i < vector->size; i++) {
+        wprintf(L"%lc", vector->data[i]->letter);
+        printf("%s\n","dupa" );
+    }
+    printf("\n");
+}
+
+void vector_free(Vector *vector) {
+  free(vector->data);
+  free(vector);
 }

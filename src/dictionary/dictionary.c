@@ -9,9 +9,17 @@
   @todo Napisać efektywną implementację.
  */
 
+
+
 #include "dictionary.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "vector.h"
+#include <assert.h>
+#include <locale.h>
+#include <string.h>
+#include <wctype.h>
+#include <wchar.h>
 
 #define _GNU_SOURCE
 
@@ -19,10 +27,6 @@
   Struktura przechowująca słownik.
   Na razie prosta implementacja z użyciem listy słów.
  */
-struct dictionary
-{
-    struct word_list list; ///< Lista przechowująca słowa w słowniku.
-};
 
 /** @name Funkcje pomocnicze
   @{
@@ -31,9 +35,38 @@ struct dictionary
   Czyszczenie pamięci słownika
   @param[in,out] dict słownik
  */
+
+struct dictionary *dictionary_new()
+{
+    struct Vector *v = malloc(sizeof(Vector));
+    vector_init(v);
+    struct Node *n;
+    n = malloc(sizeof(Node));
+    n->vector = v;
+    n->letter = '-';
+    n->isInWord = 0;
+    struct dictionary *dict;
+    dict = malloc(sizeof(dictionary));
+    dict->root = n;
+    return dict;
+}
+
+static void tree_free(struct Node *node)
+{
+    //printf("Rozmiar obecnego vectora node'a to : %i \n", node->vector->size);
+    //printf("tree_free od Node->letter = %lc \n", &node->letter);
+    for (int i = 0; i < node->vector->size; i++) {
+        tree_free(node->vector->data[i]);
+    }
+    node_free(node);
+}
+
 static void dictionary_free(struct dictionary *dict)
 {
-    word_list_done(&dict->list);
+    if (dict->root->vector->size > 0)
+        tree_free(dict->root);
+    else
+        node_free(dict->root);
 }
 
 static void skip_equal(const wchar_t **a, const wchar_t **b)
@@ -77,13 +110,8 @@ static int can_transform_by_replace(const wchar_t *a, const wchar_t *b)
 /** @name Elementy interfejsu 
   @{
  */
-struct dictionary * dictionary_new()
-{
-    struct dictionary *dict =
-        (struct dictionary *) malloc(sizeof(struct dictionary));
-    word_list_init(&dict->list);
-    return dict;
-}
+    
+
 
 void dictionary_done(struct dictionary *dict)
 {
@@ -91,55 +119,182 @@ void dictionary_done(struct dictionary *dict)
     free(dict);
 }
 
-int dictionary_insert(struct dictionary *dict, const wchar_t *word)
-{
-    if (dictionary_find(dict, word))
+
+//
+int where_in_vector(Vector *vector, wchar_t wch) {
+    int i = 0; 
+    //printf("vector size: %d\n",vector->size );
+    if (vector->size != 0) {
+        //printf("Porównuję literę %lc z %lc \n", vector->data[i]->letter, wch);
+        //printf("wynikiem porównania jest :  %d\n", (wcsncmp(&vector->data[i]->letter,&wch,1)));
+        while (wcsncmp(&vector->data[i]->letter,&wch,1) < 0) {
+            i++;
+            if ((vector->size <= i) || (vector->data[i]->letter == wch))
+              return i; ///add in the end
+        }
+        return i;
+    }
+    else 
+        return -1;
+}
+
+int dictionary_insert(struct dictionary *dict, const wchar_t *word) {
+    int length = wcslen(word);
+    int number;
+    int i = 0;
+    struct Node *node;
+    struct Node *newNode;
+    node = dict->root;
+    for (i = 0; i < length; i++) {
+        number = where_in_vector(node->vector, word[i]);
+        /// put in the end
+        if ((number == -1) || (number >= node->vector->size) || (node->vector->data[number]->letter != word[i])) {
+            if (number == -1)
+                number = 0;
+            newNode = malloc(sizeof(Node));
+            newNode->vector = malloc(sizeof(Vector));
+            vector_init(newNode->vector);
+            newNode->letter = word[i];
+            if (length == i-1)
+                newNode->isInWord = 1;
+            else
+                newNode->isInWord = 0;
+            newNode->parent = node;
+            insert_an_index(node->vector, newNode, number);
+        }
+        
+        node = node->vector->data[number];
+    }
+    if (node->isInWord == 0){
+        node->isInWord = 1;
+        return 1;
+    }
+    else
         return 0;
-    word_list_add(&dict->list, word);
+}
+
+void node_free(struct Node *node)
+{
+    vector_free(node->vector);
+    free(node);
+    node = NULL;
+}
+
+int dictionary_delete(struct dictionary *dict, const wchar_t *word) {
+    struct Node *node;
+    struct Node *parent;
+    struct Node *toDelete;
+    node = dict->root;
+    int length = wcslen(word);
+    int number;
+    int i = 0;
+    for (i = 0; i < length; i++) {
+        number = where_in_vector(node->vector, word[i]);
+        if ((number == -1) || (node->vector->size <= number) || (node->vector->data[number]->letter != word[i])) {
+            return 0; 
+        }
+        node = node->vector->data[number];
+    }
+    if (node->isInWord != 1)
+        return 0;
+    node->isInWord = 0;
+
+    while ((node->vector->size == 0) && (node->isInWord != 1) && (node->letter != '-')){
+        parent = node->parent;
+        vector_remove(parent->vector, node);
+        node_free(node);
+        node = parent;
+    }
     return 1;
 }
 
-int dictionary_delete(struct dictionary *dict, const wchar_t *word)
-{
-    /// @bug `struct word_list` nie obsługuje operacji usuwania.
-    return 0;
-}
+bool dictionary_find(const struct dictionary *dict, const wchar_t *word) {
+    struct Node *node;
+    node = dict->root;
+    int length = wcslen(word);
+    int number;
+    int i = 0;
+    for (i = 0; i < length; i++) {
+        number = where_in_vector(node->vector, word[i]);
+        if ((number == -1) || (node->vector->size <= number) || (node->vector->data[number]->letter != word[i])) {
+            return false; 
+        }
+        node = node->vector->data[number];
+    }
+    return node->isInWord;
+} 
 
-bool dictionary_find(const struct dictionary *dict, const wchar_t* word)
-{
-    const wchar_t * const * a = word_list_get(&dict->list);
-    for (size_t i = 0; i < word_list_size(&dict->list); i++)
-        if (!wcscmp(a[i], word))
-            return true;
-    return false;
-}
 
-int dictionary_save(const struct dictionary *dict, FILE* stream)
-{
-    const wchar_t * const * a = word_list_get(&dict->list);
-    for (size_t i = 0; i < word_list_size(&dict->list); i++)
-        if (fprintf(stream, "%ls\n", a[i]) < 0)
+int dictionary_save_node(const struct Node *node, FILE* stream) {
+    if (node->isInWord == 1) {
+        if (fprintf(stream, "%lc", towupper(node->letter)) < 0)
+            return -1; 
+    }
+    else if (fprintf(stream, "%lc", node->letter) < 0)
             return -1;
+    if (fprintf(stream, "%i", node->vector->size) < 0)
+        return -1;
+    printf("%lc", node->letter);
+    printf("%i", node->vector->size);
+    for (int i = 0; i < node->vector->size; i++)
+        dictionary_save_node(node->vector->data[i], stream);
+}
+
+int dictionary_save(const struct dictionary *dict, FILE* stream) {
+    dictionary_save_node(dict->root, stream);
+    if (fprintf(stream, "#") < 0)
+        return -1;
+    printf("\n");
     return 0;
 }
 
-struct dictionary * dictionary_load(FILE* stream)
-{
-    struct dictionary *dict = dictionary_new();
-    wchar_t buf[32];
-    while (fscanf(stream, "%32ls", buf) != EOF)
-        dictionary_insert(dict, buf);
-    if (ferror(stream))
-    {
+struct dictionary * dictionary_load(FILE* stream) {
+    int number = 0;
+    wchar_t wch;
+    Node *n;
+    Node *parent;
+    struct dictionary *dict = dictionary_new(); 
+    n = dict->root;
+    parent = dict->root;
+    while ((fscanf(stream, "%lc", &wch) != EOF) && (wch != '#')) {
+        if (fscanf(stream, "%d", &number) < 0)
+           return NULL;
+        //printf("Wczytany obiekt to %lc%d \n", wch, number);
+        if (wch != '-') {
+            n = malloc(sizeof(Node));
+            if (iswupper(wch)) {
+                wch = towlower(wch);
+                n->isInWord = 1;
+            } 
+            else 
+                n->isInWord = 0;
+            n->letter = wch;
+            n->parent = parent;
+            struct Vector *v = malloc(sizeof(Vector));
+            vector_init(v);
+            n->vector = v;
+            vector_append(parent->vector, n);
+            parent = n;
+        }
+        n->toBuild = number;
+        while ((n != dict->root) && (n->toBuild == 0)) {
+            n = n->parent;
+            parent = n;
+            n->toBuild--;
+        }
+        printf("%lc%d", wch, number);
+    }
+    if (ferror(stream)) {
         dictionary_done(dict);
         dict = NULL;
     }
     return dict;
 }
 
+
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
         struct word_list *list)
-{
+{/*
     word_list_init(list);
     size_t wlen = wcslen(word);
     const wchar_t * const * a = word_list_get(&dict->list);
@@ -161,7 +316,9 @@ void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
             if (can_transform_by_delete(a[i], word))
                 word_list_add(list, a[i]);
         }
-    }
+    }*/
+        //return 0;
 }
 
-/**@}*/
+
+
