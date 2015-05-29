@@ -26,6 +26,11 @@ typedef struct dictionary {
     struct Node *root; 
 } dictionary;
 
+typedef struct list {
+  struct list *next;
+  wchar_t letter;
+} list;
+
 
 /**
   Inicjalizacja słownika.
@@ -34,22 +39,24 @@ typedef struct dictionary {
   */
 //struct dictionary *dictionary_new(void);
 
-static void dictionary_free(struct dictionary *dict);
+//static void skip_equal(const wchar_t **a, const wchar_t **b);
 
-static void skip_equal(const wchar_t **a, const wchar_t **b);
+//static int can_transform_by_delete(const wchar_t *a, const wchar_t *b);
 
-static int can_transform_by_delete(const wchar_t *a, const wchar_t *b);
-
-static int can_transform_by_replace(const wchar_t *a, const wchar_t *b);
+//static int can_transform_by_replace(const wchar_t *a, const wchar_t *b);
 
 struct dictionary *dictionary_new(void);
 
+static void dictionary_free(struct dictionary *dict);
 
 /**
   Destrukcja słownika.
   @param[in,out] dict Słownik.
   */
 void dictionary_done(struct dictionary *dict);
+
+
+void alphabet(const struct Node *n, struct list *l);
 
 
 /**
@@ -60,6 +67,8 @@ void dictionary_done(struct dictionary *dict);
   */
 
 void node_free(struct Node *node);
+
+struct list* add_to_list(struct list *l, wchar_t c);
 
 int where_in_vector(Vector *vector, wchar_t wch);
 
@@ -105,6 +114,8 @@ int dictionary_save(const struct dictionary *dict, FILE* stream);
   */
 struct dictionary * dictionary_load(FILE* stream);
 
+
+void words_to_check(const wchar_t *word, struct word_list *li, const struct Node *n, struct list *l);
 
 /**
   Sprawdza, czy dane słowo znajduje się w słowniku.

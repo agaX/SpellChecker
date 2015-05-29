@@ -15,13 +15,13 @@ typedef struct Node {
 	struct Vector *vector; /// vector of pointers to nodes
 	struct Node *parent; /// pointer to parent
 	//int isInWord;
-}Node;
+} Node;
 
 /// Define a vector type
 typedef struct Vector {
   int size;      /// slots used so far
   int capacity;  /// total available slots
-  Node **data;     /// array of pointers to node's we're storing
+  Node **data;     /// array of pointers to node's which we're storing
 } Vector;
 
 void vector_init(Vector *vector);

@@ -26,13 +26,23 @@
   */
 #define WORD_LIST_SUM 1024
 
+#define MAX_WORD_SIZE 100
+
+typedef struct word_list {
+    struct word_list *next;
+    wchar_t word[MAX_WORD_SIZE];
+} word_list;
+
+
 /**
   Struktura przechowująca listę słów.
   Należy używać funkcji operujących na strukturze,
   gdyż jej implementacja może się zmienić.
   */
-struct word_list
-{
+/*
+typedef struct word_list {
+
+
     /// Liczba słów.
     size_t size;
     /// Łączna liczba znaków.
@@ -41,7 +51,7 @@ struct word_list
     const wchar_t *array[WORD_LIST_MAX_WORDS];
     /// Bufor, w którym pamiętane są słowa.
     wchar_t buffer[WORD_LIST_SUM];
-};
+} word_list; */
 
 /**
   Inicjuje listę słów.
@@ -71,7 +81,7 @@ int word_list_add(struct word_list *list, const wchar_t *word);
 static inline
 size_t word_list_size(const struct word_list *list)
 {
-    return list->size;
+    return 0; //list->size;
 }
 
 /**
@@ -82,7 +92,7 @@ size_t word_list_size(const struct word_list *list)
 static inline
 const wchar_t * const * word_list_get(const struct word_list *list)
 {
-    return list->array;
+    return NULL; // list->array;
 }
 
 #endif /* __WORD_LIST_H__ */
