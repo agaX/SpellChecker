@@ -1,7 +1,6 @@
 # dodajemy bibliotekę dictionary, stworzoną na podstawie pliku dictionary.c
 # biblioteka będzie dołączana statycznie (czyli przez linkowanie pliku .o)
 
-
 add_library (dictionary dictionary.c word_list.c vector.c)
 add_library (dictionary dictionary.c word_list.c)
 
@@ -16,4 +15,4 @@ if (CMOCKA)
     # wreszcie deklarujemy, że to test
     add_test (word_list_unit_test word_list_test)
 endif (CMOCKA)
->>>>>>> origin/unit_tests
+
