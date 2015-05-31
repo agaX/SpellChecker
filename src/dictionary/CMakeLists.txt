@@ -2,8 +2,6 @@
 # biblioteka będzie dołączana statycznie (czyli przez linkowanie pliku .o)
 
 add_library (dictionary dictionary.c word_list.c vector.c)
-add_library (dictionary dictionary.c word_list.c)
-
 
 if (CMOCKA)
     # dodajemy plik wykonywalny z testem    
