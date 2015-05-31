@@ -6,15 +6,14 @@
   @file
   Główny plik modułu dict-check.
   @ingroup dict-check
-  @author Jakub Pawlewicz <pan@mimuw.edu.pl>
-  @copyright Uniwerstet Warszawski
+  @author Agnieszka Kusnierz <ak332284@students.mimuw.edu.pl>
   @date 2015-05-29
  */
 
-
+#include "dictionary.h"
+#include "trie.h"
 #include "vector.h"
 #include "word_list.h"
-#include "dictionary.h"
 #include <assert.h>
 #include <locale.h>
 #include <stdio.h>
@@ -57,7 +56,6 @@ static void dict_check_command(struct dictionary *dict, bool vMode) {
     int letterPosition = 1;
     int letterLine = 1;
     int isItWord = 0;
-    int first = 1;
     struct word_list *l;
     l = malloc(sizeof(word_list));
     word_list_init(l);
@@ -79,16 +77,10 @@ static void dict_check_command(struct dictionary *dict, bool vMode) {
                 if (make_lowercase(word)) {
                     if (!dictionary_find(dict, word)) {
                         printf("#%ls", wordCopy);
-                        if (vMode){
-                            if (first == 1) {
-                                first = 0;
-                                fprintf(stderr, "%d,%d ",letterLine, letterPosition - i);
-                            }
-                            else 
-                                fprintf(stderr, "\n%d,%d ",letterLine, letterPosition - i);
-                        }
-                        if (vMode)
+                        if (vMode) {
+                            fprintf(stderr, "%d,%d ",letterLine, letterPosition - i);
                             fprintf(stderr, "%ls: ", wordCopy);
+                        }
                         if (make_lowercase(word)) {
                             dictionary_hints(dict, word, l);
                             l2 = l->next;
@@ -104,6 +96,7 @@ static void dict_check_command(struct dictionary *dict, bool vMode) {
                                     }
                                     l2 = l2->next;
                                 }
+                                fprintf(stderr, "\n");
                             }
                             word_list_done(l);
                             l->next = NULL;
@@ -162,8 +155,6 @@ int main(int argc, char *argv[]) {
     fclose(f);
     //printf("dictionary loaded from file %s\n", dictionary_name);
     dict_check_command(dict, vMode);
-    if (vMode)
-        fprintf(stderr, "\n");
     dictionary_done(dict);
     return 0;
     

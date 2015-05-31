@@ -10,9 +10,10 @@
     @copyright Uniwersytet Warszawski
   */
 
+#include "dictionary.h"
+#include "trie.h"
 #include "vector.h"
 #include "word_list.h"
-#include "dictionary.h"
 #include <assert.h>
 #include <locale.h>
 #include <stdio.h>

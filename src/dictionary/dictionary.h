@@ -13,6 +13,7 @@
 
 #include "vector.h"
 #include "word_list.h"
+#include "trie.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <wchar.h>
@@ -22,24 +23,9 @@
   */
 typedef struct dictionary {
     ///korzeń słownika
-    struct Node *root; 
+    struct Node *root;
+    struct letter_list *alphabet; 
 } dictionary;
-
-/**
-  Struktura przechowująca alfabet
-  */
-typedef struct letter_list {
-  ///Wskaźnik na kolejny element slfabetu
-  struct letter_list *next;
-  ///Litera znajdująca się konkretnym węźle
-  wchar_t letter;
-} letter_list;
-
-/** 
-  Pomocnicza funkcja do czyszczenia listy liter
-  @param[in,out] letter_list, lista przeznaczona do skasowania.
-  */
-void letter_list_done(struct letter_list *l);
 
 /** 
   Tworzenie słownika
@@ -53,43 +39,11 @@ struct dictionary *dictionary_new(void);
   */
 static void dictionary_free(struct dictionary *dict);
 
-/** 
-  Pomocnicza funkcja do czyszczenia słownika
-  @param[in,out] node, na którym wykonywane są operacje.
-  */
-static void tree_free(struct Node *node);
-
 /**
   Destrukcja słownika.
   @param[in,out] dict Słownik.
   */
 void dictionary_done(struct dictionary *dict);
-
-/**
-  Tworzenie alfabetu.
-  @param[in]n węzeł, z którego aktualnie pobieramy literki.s
-  @param[in]l lista zawierająca alfabet.
-  @return
-  */ 
-void alphabet(const struct Node *n, struct letter_list *l);
-
-/**Usuwanie node'a
-  @param[in] node, który zostaje usunięty, razem z vectorem, który zawiera
-  */
-void node_free(struct Node *node);
-
-/**Dodanie litery do alfabetu.
-  @param[in]l alfabet, każdy węzeł zawiera 1 literkę.
-  @param[in]c litera, która jest dodawana.
-  @return list l - zaaktualizowana lista.
-  */
-struct letter_list* add_to_list(struct letter_list *l, wchar_t c);
-
-/** Zwraca miejsce w wektorze, na które zostanie wstawiony znak
-  @param[in] vector do którego zostanie wstawiony znak wch
-  @param[in] wch to znak, który zostanie wstawiony
-  */
-int where_in_vector(Vector *vector, wchar_t wch);
 
 /**
   Wstawia podane słowo do słownika.
@@ -146,7 +100,7 @@ struct dictionary * dictionary_load(FILE* stream);
   @param[in]n pierwszy węzeł słownika.
   @param[in]l aktualny alfabet.
   */ 
-void words_to_check(const wchar_t *word, struct word_list *li, const struct dictionary *dict, struct letter_list *l);
+void words_to_check(const wchar_t *word, struct word_list *li, const struct dictionary *dict);
 
 /**
   Sprawdza, czy dane słowo znajduje się w słowniku.
@@ -156,16 +110,6 @@ void words_to_check(const wchar_t *word, struct word_list *li, const struct dict
   */
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
         struct word_list *list);
-
-/**
-  Sprawdzanie, czy dana litera znajduje się w aktualnym alfabecie.
-  @param[in]l alfabet, każdy węzeł zawiera 1 literkę.
-  @param[in]c litera, która jest sprawdzana.
-  @return true, jeśli litera znajduje się w alfabecie, false w p.p.
-  */
-bool is_char_in_list(struct letter_list *l, wchar_t c);
-
-
 
 /**
   Zwraca nazwy języków, dla których dostępne są słowniki.

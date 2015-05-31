@@ -1,172 +1,101 @@
+/** @file
+  Implementacja drzewa trie.
+  @ingroup dictionary
+  @author Agnieszka Kusnierz <ak332284@students.mimuw.edu.pl>
+  @date 2015-05-29
+  */
+
+#include "trie.h"
+#include "dictionary.h"
+#include "conf.h"
 #include <stdio.h>
-#include <wchar.h>
-#include <stddef.h>
-#include <locale.h>
-#include <stddef.h>
-#include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <locale.h>
+#include <string.h>
+#include <wctype.h>
+#include <wchar.h>
 
-typedef struct Node {
-	wchar_t letter;
-	int isItWord;
-	int numberOfChildren;
-	struct Node *children[32];
-	struct Node *parent;
-} Node;
-
-int insert(Node *node, wchar_t word[100]) {
-	Node *newNode;
-	int indexOfArray = 0; //to compile
-	int currentIndex = 0; 
-	if (node != NULL) {
-		while (word[currentIndex] != 0) {
-			if  (node->children[indexOfArray] == NULL) {
-				newNode = malloc(sizeof(Node));
-				for (int i = 0; i < 32; i++)
-					node->children[i] = NULL;
-				newNode->numberOfChildren = 0;
-				newNode->parent = node;
-				if (word[currentIndex + 1] == 0) {
-					newNode->isItWord = 1;
-					return 1;
-				}
-				node->children[indexOfArray] = newNode;
-				newNode->letter = word[currentIndex];
-				currentIndex++;
-				node->numberOfChildren++;
-				node = newNode;
-			}
-			else {
-				node = node->children[indexOfArray];
-				if (word[currentIndex + 1] == 0) {
-					if (node->isItWord == 1)
-						return 0;
-					else {
-						node->isItWord = 1;
-						return 1;
-					}	
-				}
-				currentIndex++;
-			}
-		}
-	}
-	return 0;
+void letter_list_done(struct letter_list *l) {
+  struct letter_list *flunkey;
+  while (l != NULL) {
+    flunkey = l;
+    l = l->next;
+    free(flunkey);
+  }
 }
 
-int find(Node *node, wchar_t word[100]) {
-	int stop = 0;
-	int indexOfArray = 0; //to compile
-	int currentIndex = 0;
-	while (stop != 1) {
-		if (node->children[indexOfArray] != NULL) 
-			node = node->children[indexOfArray];
-		else return 0;
-		currentIndex++;
-		if (word[currentIndex] == 0) {
-			if (node->isItWord == 0)
-				return 0;
-			else
-				return 1;
-		}
-	}
-	return 0;
+void tree_free(struct Node *node)
+{
+    for (int i = 0; i < node->vector->size; i++) {
+        tree_free(node->vector->data[i]);
+    }
+    node_free(node);
 }
 
-int delete(Node *node, wchar_t word[100]) {
-	Node *flunkey;
-	int stop = 0;
-	int indexOfArray = 0; //to compile
-	int currentIndex = 0;
-	int wasCleaned = 0;
-	while (stop != 1) {
-		if (node->children[indexOfArray] != NULL) //indexOfArray, ma mieć nr odpowiadający wchar_T word[currentIndex] :)
-			node = node->children[indexOfArray];
-		else return 0;
-		currentIndex++;
-		if (word[currentIndex] == 0) {
-			if (node->isItWord == 0)
-				return 0;
-			else {
-				/* słowo się skończyło i jesteśmy w node'dzie, który jest słowem,
-				jeśli ma synów, to tylko mówimy, że już nie jest końcem słowa,
-				jeśli nie ma synów to go usuwamy */
-				if (node->numberOfChildren == 0) {  
-					flunkey = node;
-					node = node->parent;
-					free(flunkey);
-					node->children[indexOfArray] = NULL;
-					currentIndex--;
-					node->numberOfChildren--;
-				}
-				else {
-					/* zmieniliśmy, nie jest już słowem */
-					node->isItWord = 0;
-					return 1;
-				}
-				/*teraz jeśli jesteśmy w "końcu" słowa, to na pewno nie jest to nasz koniec słowa,
-				więc wychodzimy z delete'a, a jeśli to nie jest koniec słowa, to sprawdzamy, czy ma dzieciaki,
-				jeśli ma, to wychodzimy, jeśli nie ma, to kasujemy node'a*/
-				while (node != NULL) {
-					if (node->isItWord == 1)
-						return 1;
-					else {
-						if (currentIndex >= 0) {
-							if (node->numberOfChildren == 0) {  
-								flunkey = node;
-								node = node->parent;
-								free(flunkey);
-								node->children[indexOfArray] = NULL;
-								currentIndex--;
-								node->numberOfChildren--;
-							}
-							else
-								return 1;
-						}
-						else
-							return 1;
-					}
-				}
-			}
-		}
-	}
-	return 0;
+void alphabet_init(const struct Node *n, struct letter_list *l)
+{
+    for (int i = 0; i < n->vector->size; i++)
+        alphabet_init(n->vector->data[i], l);
+    if (n->letter != '-')
+        add_to_list(l, n->letter);
 }
 
-
-
-
-
-
-/*
-
-int indexOfArray() {
-
+void node_free(struct Node *node)
+{
+    vector_free(node->vector);
+    free(node);
+    node = NULL;
 }
-*/
 
-
-/*
-int main() {
-	wchar_t ws1;
-	wchar_t ws2;
-	setlocale(LC_ALL, "en_PL.UTF-8");
-	scanf("%lc",ws1);
-	scanf("%ls",ws2);
-	printf("wcscoll(const wchar_t *ws1, const wchar_t *ws2)");
-
+struct letter_list* add_to_list(struct letter_list *l, wchar_t c)
+{
+    struct letter_list *newList;
+    struct letter_list *flunkey;
+    if (!is_char_in_list(l, c)) {
+        flunkey = l;
+        while (flunkey->next != NULL)
+            flunkey = flunkey->next;
+        newList = malloc(sizeof(letter_list));
+        newList->letter = c;
+        newList->next = NULL;
+        flunkey->next = newList;
+    }
+    return l;
 }
-*/
 
-int main() {
+int where_in_vector(Vector *vector, wchar_t wch)
+{
+    if (vector->size == 0)
+        return -1;
+    int i = 0;
+    int j = vector->size-1;
+    int middle;
+    int cmp;
+    while (i < j) {
+        middle = (j+i) / 2;
+        cmp = wcsncmp(&vector->data[middle]->letter, &wch, 1);
+        if (cmp > 0)
+            j = middle;
+        else if (cmp < 0)
+            i = middle+1;
+        else{
+            return middle;
+        }
+    }
+    if ((i == vector->size-1) && (wcsncmp(&vector->data[i]->letter, &wch, 1) < 0))
+        i++;
+    return i;
+}
 
-    wchar_t string[100];
-
-	setlocale(LC_ALL, "en_PL.UTF-8");
-
-    printf ("Enter a string: ");
-    scanf("%ls",string);
-
-    printf("String Entered: %ls: length: %zu", string, wcslen(string));
-
-    return 0;
+bool is_char_in_list(struct letter_list *l, wchar_t c)
+{
+    struct letter_list *flunkey;
+    flunkey = l;
+    while (flunkey != NULL) {
+        if (wcsncmp(&flunkey->letter, &c, 1) == 0)
+            return true;
+        flunkey = flunkey->next;
+    }
+    return false;
 }

@@ -9,10 +9,10 @@
  */
  
 #include "dictionary.h"
+#include "trie.h"
 #include "conf.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "vector.h"
 #include <assert.h>
 #include <locale.h>
 #include <string.h>
@@ -20,15 +20,6 @@
 #include <wchar.h>
  
 #define _GNU_SOURCE
-
-void letter_list_done(struct letter_list *l) {
-  struct letter_list *flunkey;
-  while (l != NULL) {
-    flunkey = l;
-    l = l->next;
-    free(flunkey);
-  }
-}
 
 struct dictionary *dictionary_new()
 {
@@ -42,15 +33,11 @@ struct dictionary *dictionary_new()
     struct dictionary *dict;
     dict = malloc(sizeof(dictionary));
     dict->root = n;
+    dict->alphabet = malloc(sizeof(letter_list));
+    dict->alphabet->letter = '#';
+    dict->alphabet->next = NULL;
+    alphabet_init(dict->root, dict->alphabet);
     return dict;
-}
-
-static void tree_free(struct Node *node)
-{
-    for (int i = 0; i < node->vector->size; i++) {
-        tree_free(node->vector->data[i]);
-    }
-    node_free(node);
 }
 
 static void dictionary_free(struct dictionary *dict)
@@ -59,10 +46,9 @@ static void dictionary_free(struct dictionary *dict)
         tree_free(dict->root);
     else
         node_free(dict->root);
+    letter_list_done(dict->alphabet);
 }
- 
- 
- 
+
 static void skip_equal(const wchar_t **a, const wchar_t **b)
 {
     while (**a == **b && **a != L'\0')
@@ -72,64 +58,10 @@ static void skip_equal(const wchar_t **a, const wchar_t **b)
     }
 }
 
-/**
-  Zwraca czy słowo `a` można zamienić w `b` przez usunięcie znaku.
-  @param[in] a Dłuższe słowo.
-  @param[in] b Krótsze słowo.
-  @return 1 jeśli się da zamienić `a` w `b` przez usunięcia znaku, 0 w p.p.
- */
-static int can_transform_by_delete(const wchar_t *a, const wchar_t *b)
-{
-    //struct word_list *list;
- 
-    skip_equal(&a, &b);
-    a++;
-    skip_equal(&a, &b);
-    return *a == L'\0' && *b == L'\0';
-}
-
-/**
-  Zwraca czy słowo `a` można zamienić w `b` przez zamianę znaku.
-  @param[in] a Pierwsze słowo.
-  @param[in] b Drugie słowo.
-  @return 1 jeśli się da zamienić `a` w `b` przez zamianę znaku, 0 w p.p.
- */
-static int can_transform_by_replace(const wchar_t *a, const wchar_t *b)
-{
-    skip_equal(&a, &b);
-    a++; b++;
-    skip_equal(&a, &b);
-    return *a == L'\0' && *b == L'\0';
-}
-
 void dictionary_done(struct dictionary *dict)
 {
     dictionary_free(dict);
     free(dict);
-}
-
-int where_in_vector(Vector *vector, wchar_t wch)
-{
-    if (vector->size == 0)
-        return -1;
-    int i = 0;
-    int j = vector->size-1;
-    int middle;
-    int cmp;
-    while (i < j) {
-        middle = (j+i) / 2;
-        cmp = wcsncmp(&vector->data[middle]->letter, &wch, 1);
-        if (cmp > 0)
-            j = middle;
-        else if (cmp < 0)
-            i = middle+1;
-        else{
-            return middle;
-        }
-    }
-    if ((i == vector->size-1) && (wcsncmp(&vector->data[i]->letter, &wch, 1) < 0))
-        i++;
-    return i;
 }
 
 int dictionary_insert(struct dictionary *dict, const wchar_t *word)
@@ -157,6 +89,7 @@ int dictionary_insert(struct dictionary *dict, const wchar_t *word)
             insert_an_index(node->vector, newNode, number);
         }
         node = node->vector->data[number];
+        add_to_list(dict->alphabet, word[i]);
     }
     if (node->isInWord == 0){
         node->isInWord = 1;
@@ -164,13 +97,6 @@ int dictionary_insert(struct dictionary *dict, const wchar_t *word)
     }
     else
         return 0;
-}
-
-void node_free(struct Node *node)
-{
-    vector_free(node->vector);
-    free(node);
-    node = NULL;
 }
 
 int dictionary_delete(struct dictionary *dict, const wchar_t *word)
@@ -284,10 +210,11 @@ struct dictionary * dictionary_load(FILE* stream)
         dictionary_done(dict);
         dict = NULL;
     }
+    alphabet_init(dict->root, dict->alphabet);
     return dict;
 }
 
-void words_to_check(const wchar_t *word, struct word_list *li, const struct dictionary *dict, struct letter_list *l)
+void words_to_check(const wchar_t *word, struct word_list *li, const struct dictionary *dict)
 {
     size_t wlen = wcslen(word);
     wchar_t new_word[wlen + 1];
@@ -303,92 +230,47 @@ void words_to_check(const wchar_t *word, struct word_list *li, const struct dict
         if (dictionary_find(dict, new_word))
             word_list_add(li, new_word);  
     }
-    ///Tworzenie alfabetu, każda litera występująca w słowniku bez powtórzeń.
-    alphabet(dict->root, l);
     ///Słowa, które powstają przez dodanie dowolnej litery w dowolnym miejscu.
-    flunkey = l;
+    flunkey = dict->alphabet;
     while (flunkey != NULL) {
         flunkey = flunkey->next;
     }
     for (int i = 0; i <= wlen; i++) {
-        flunkey = l;
-        while (l != NULL) {
+        flunkey = dict->alphabet;
+        while (flunkey != NULL) {
             for (int k = 0; k < i; k++)
                 new_word[k] = word[k];
-            new_word[i] = l->letter;
+            new_word[i] = flunkey->letter;
             j = i;
             for (; j < wlen; j++)
                 new_word[j + 1] = word[j];
-            l = l->next;
+            flunkey = flunkey->next;
             new_word[wlen+1] = '\0';
             if (dictionary_find(dict, new_word))
                 word_list_add(li, new_word); 
         }
-        l = flunkey;     
     }
     ///Słowa powstałe przez zamianę jednej litery na dowolną inną.
     for (int i = 0; i < wlen; i++) {
-        flunkey = l;
-        while (l != NULL) {
+        flunkey = dict->alphabet;
+        while (flunkey != NULL) {
             for (int k = 0; k < i; k++)
                 new_word[k] = word[k];
-            new_word[i] = l->letter;
+            new_word[i] = flunkey->letter;
             j = i + 1;
             for (; j <= wlen; j++)
                 new_word[j] = word[j];
-            l = l->next;
+            flunkey = flunkey->next;
             new_word[wlen] = '\0';
             if (dictionary_find(dict, new_word))
                 word_list_add(li, new_word); 
         }
-        l = flunkey; 
     }
-}
-
-bool is_char_in_list(struct letter_list *l, wchar_t c)
-{
-    struct letter_list *flunkey;
-    flunkey = l;
-    while (flunkey != NULL) {
-        if (wcsncmp(&flunkey->letter, &c, 1) == 0)
-            return true;
-        flunkey = flunkey->next;
-    }
-    return false;
-}
-
-struct letter_list* add_to_list(struct letter_list *l, wchar_t c)
-{
-    struct letter_list *newList;
-    struct letter_list *flunkey;
-    if (!is_char_in_list(l, c)) {
-        flunkey = l;
-        while (flunkey->next != NULL)
-            flunkey = flunkey->next;
-        newList = malloc(sizeof(letter_list));
-        newList->letter = c;
-        newList->next = NULL;
-        flunkey->next = newList;
-    }
-    return l;
-}
-
-void alphabet(const struct Node *n, struct letter_list *l)
-{
-    for (int i = 0; i < n->vector->size; i++)
-        alphabet(n->vector->data[i], l);
-    if (n->letter != '-')
-        add_to_list(l, n->letter);
 }
 
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
         struct word_list *list)
 {
     word_list_init(list);
-    struct letter_list *l;
-    l = malloc(sizeof(letter_list));
-    l->letter = '#';
-    l->next = NULL;
-    words_to_check(word, list, dict, l);
-    letter_list_done(l);
+    words_to_check(word, list, dict);
 }

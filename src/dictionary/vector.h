@@ -1,14 +1,9 @@
-/** @defgroup dictionary Moduł dictionary
-    Biblioteka obsługująca słownik.
-  */
 /** @file
-    Interfejs wektora.
-
-    @ingroup dictionary
-    @author Jakub Pawlewicz <pan@mimuw.edu.pl>
-    @copyright Uniwerstet Warszawski
-    @date 2015-05-27
- */
+  Interfejs wektora.
+  @ingroup dictionary
+  @author Agnieszka Kusnierz <ak332284@students.mimuw.edu.pl>
+  @date 2015-05-29
+  */
 
 
 #ifndef __VECTOR_H__

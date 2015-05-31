@@ -1,11 +1,9 @@
 /** @file
   Implementacja wektora.
   Wektor przechowuje wskaźniki do kolejnych węzłów słownika.
- 
   @ingroup dictionary
-  @author Jakub Pawlewicz <pan@mimuw.edu.pl>
-  @copyright Uniwerstet Warszawski
-  @date 2015-05-11
+  @author Agnieszka Kusnierz <ak332284@students.mimuw.edu.pl>
+  @date 2015-05-29
  */
 
 #include <stdio.h>
@@ -58,7 +56,6 @@ void vector_double_capacity_if_full(Vector *vector) {
 void write_vector(Vector *vector) {
     for (int i = 0; i < vector->size; i++) {
         wprintf(L"%lc", vector->data[i]->letter);
-        printf("%s\n","dupa" );
     }
     printf("\n");
 }
