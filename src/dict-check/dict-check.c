@@ -1,15 +1,16 @@
-/** @defgroup dict-editor Moduł dict-editor
-    Prosty klient biblioteki dictionary.
-    Umożliwia edycję słownika.
+/** @defgroup dict-check Moduł dict-check
+  Program sprawdzający pisownię w danym tekście.
+  Program zwraca podpowiedzi do słów, dla zapytań, których nie ma w słowniku.
   */
-/** @file
-    Główny plik modułu dict-editor
-    @ingroup dict-editor
-    @author Jakub Pawlewicz <pan@mimuw.edu.pl>
-    @date 2015-05-11
-    @copyright Uniwersytet Warszawski
-    @todo Poprawić proste parsowanie na porządniejsze.
-  */
+/** 
+  @file
+  Główny plik modułu dict-check.
+  @ingroup dict-check
+  @author Jakub Pawlewicz <pan@mimuw.edu.pl>
+  @copyright Uniwerstet Warszawski
+  @date 2015-05-29
+ */
+
 
 #include "vector.h"
 #include "word_list.h"
@@ -22,86 +23,18 @@
 #include <wctype.h>
 #include <wchar.h>
 
-
-
-/** Makro służące do otrzymania stałej w formie napisu */
-#define str(x)          # x
-/** Makro służące do otrzymania stałej w formie napisu */
-#define xstr(x)         str(x)
-
-
-/** Dostępne polecenia. 
-    Odpowiadające komendy w tablicy @ref commands
- */
-enum Command {
-    INSERT,
-    DELETE,
-    FIND,
-    HINTS,
-    SAVE,
-    LOAD,
-    QUIT,
-    CLEAR,
-    COMMANDS_COUNT };
-
-
-/** Komendy wywołujące pocelnia. 
-    Kolejność zgodna z tą w enum @ref Command.
+/** 
+  Maksymalna długość słowa.
+  Maksymalna długość słowa bez kończącego znaku '\0'
   */
-static const char *commands[] =
-{
-    "insert",
-    "delete",
-    "find",
-    "hints",
-    "save",
-    "load",
-    "quit",
-    "clear"
-};
-
-/** Maksymalna długość komendy.
-    Maksymalna długość komendy bez kończącego znaku '\0'
-  */
-#define MAX_COMMAND_LENGTH 15
-/** Maksymalna długość słowa.
-    Maksymalna długość słowa bez kończącego znaku '\0'
-  */
-#define MAX_WORD_LENGTH 63
-/** Maksymalna długość nazwy pliku.
-    Maksymalna długość nazwy pliku bez kończącego znaku '\0'
-  */
-#define MAX_FILE_LENGTH 511
+#define MAX_WORD_LENGTH 100
 
 
-/** Wczytuje wejście do napotkania znaku nowej linii.
-  */
-void skip_line()
-{
-    if (scanf("%*[^\n]\n") < 0) {
-        if (ferror(stdin))
-        {
-            fprintf(stderr, "Failed to read line\n");
-            exit(1);
-        }
-    }
-}
-
-
-/** Ignoruje wiersz 
- */
-int ignored()
-{
-    printf("ignored\n");
-    skip_line();
-    return 1;
-}
-
-
-/** Zamienia słowo na złożone z małych liter.
+/** 
+  Zamienia słowo na złożone z małych liter.
   @param[in,out] word Modyfikowane słowo.
   @return 0, jeśli słowo nie jest złożone z samych liter, 1 w p.p.
- */
+  */
 int make_lowercase(wchar_t *word)
 {
     for (wchar_t *w = word; *w; ++w)
@@ -112,172 +45,125 @@ int make_lowercase(wchar_t *word)
     return 1;
 }
 
-
-/** Przetwarza komendę operującą na słowniku.
-  @param[in,out] dict Słownik, na którym wykonywane są operacje.
-  @param[in] c Komenda.
-  @return 0, jeśli należy zakończyć proram, 1 w p.p.
- */
-static int dict_command(struct dictionary **dict, enum Command c) 
-{
-    wchar_t word[MAX_WORD_LENGTH+1];
-    if (scanf("%" xstr(MAX_WORD_LENGTH) "ls", word) <= 0)
-    {
-        fprintf(stderr, "Failed to read word\n");
-        exit(1);
-    }
-    if (!make_lowercase(word))
-    {
-        fprintf(stderr, "Invalid word '%ls'\n", word);
-        return ignored();
-    }
-    switch (c)
-    {
-        case INSERT:
-            if (dictionary_insert(*dict, word))
-                printf("inserted: %ls\n", word);
-            else
-                return ignored();
-            break;
-        case DELETE:
-            if (dictionary_delete(*dict, word))
-                printf("deleted: %ls\n", word);
-            else
-                return ignored();
-            break;
-        case FIND:
-            if (dictionary_find(*dict, word))
-                printf("found: %ls\n", word);
-            else
-                printf("not found: %ls\n", word);
-            break;
-        case HINTS:
-            {
-                struct word_list list;
-                dictionary_hints(*dict, word, &list);
-                const wchar_t * const *a = word_list_get(&list);
-                for (size_t i = 0; i < word_list_size(&list); ++i)
-                {
-                    if (i)
-                        printf(" ");
-                    printf("%ls", a[i]);
-                }
-                printf("\n");
-                break;
-            }
-        default:
-            assert(false);
-    }
-    skip_line();
-    return 1;
-}
-
-
-/** Przetwarza komendę operującą na plikach.
-  @param[in,out] dict Słownik, na którym wykonywane są operacje.
-  @param[in] c Komenda.
-  @return 0, jeśli należy zakończyć proram, 1 w p.p.
- */
-static int file_command(struct dictionary **dict, enum Command c) 
-{
-    char filename[MAX_FILE_LENGTH+1];
-    if (scanf("%" xstr(MAX_FILE_LENGTH) "s", filename) <= 0)
-    {
-        fprintf(stderr, "Failed to read filename\n");
-        exit(1);
-    }
-    switch (c)
-    {
-        case SAVE:
-            {
-                FILE *f = fopen(filename, "w");
-                if (!f || dictionary_save(*dict, f))
-                {
-                    fprintf(stderr, "Failed to save dictionary\n");
-                    exit(1);
-                }
-                fclose(f);
-                printf("dictionary saved in file %s\n", filename);
-                break;
-            }
-        case LOAD:
-            {
-                FILE *f = fopen(filename, "r");
-                struct dictionary *new_dict;
-                if (!f || !(new_dict = dictionary_load(f)))
-                {
-                    fprintf(stderr, "Failed to load dictionary\n");
-                    exit(1);
-                }
-                fclose(f);
-                printf("dictionary loaded from file %s\n", filename);
-                dictionary_done(*dict);
-                *dict = new_dict;
-                break;
-            }
-        default:
-            assert(false);
-    }
-    skip_line();
-    return 1;
-}
-
-
-
-/** Przetwarza jedną komendę.
-  @param[in,out] dict Słownik, na którym wykonywane są operacje
-  @return 0, jeśli należy zakończyć proram, 1 w p.p.
- */
-int try_process_command(struct dictionary **dict)
-{
-    char cmd[MAX_COMMAND_LENGTH+1];
-    if (scanf("%" xstr(MAX_COMMAND_LENGTH) "s", cmd) <= 0)
-    {
-        if (ferror(stdin))
-        {
-            fprintf(stderr, "Failed to read command\n");
-            exit(1);
+/**
+  Przepisanie tekstu, wypisanie podpowiedzi.
+  @param[in]dict, słownik, na którym są wykonywane operacje.
+  */
+static void dict_check_command(struct dictionary *dict, bool vMode) {
+    wchar_t word[MAX_WORD_LENGTH + 1];
+    wchar_t wordCopy[MAX_WORD_LENGTH + 1];
+    int i = 0;
+    wchar_t c;
+    int letterPosition = 1;
+    int letterLine = 1;
+    int isItWord = 0;
+    int first = 1;
+    struct word_list *l;
+    l = malloc(sizeof(word_list));
+    word_list_init(l);
+    struct word_list *l2;
+    while (scanf("%lc", &c) != EOF) {
+            letterPosition++;
+        if (iswalpha(c)) {
+            word[i] = c;
+            i++;
+            isItWord = 1;
         }
-        return 0;
+        else {
+            if (isItWord == 1) {
+                word[i] = '\0';
+                i++;
+                wordCopy[i] = '\0';
+                isItWord = 0;
+                wcscpy(wordCopy,word);
+                if (make_lowercase(word)) {
+                    if (!dictionary_find(dict, word)) {
+                        printf("#%ls", wordCopy);
+                        if (vMode){
+                            if (first == 1) {
+                                first = 0;
+                                fprintf(stderr, "%d,%d ",letterLine, letterPosition - i);
+                            }
+                            else 
+                                fprintf(stderr, "\n%d,%d ",letterLine, letterPosition - i);
+                        }
+                        if (vMode)
+                            fprintf(stderr, "%ls: ", wordCopy);
+                        if (make_lowercase(word)) {
+                            dictionary_hints(dict, word, l);
+                            l2 = l->next;
+                            if (vMode) {
+                                while (l2 != NULL) {
+                                    if (l2->next != NULL) {
+                                        if (dictionary_find(dict, l2->word))
+                                            fprintf(stderr, "%ls ", l2->word);
+                                    }
+                                    else {
+                                        if (dictionary_find(dict, l2->word))
+                                            fprintf(stderr, "%ls", l2->word);
+                                    }
+                                    l2 = l2->next;
+                                }
+                            }
+                            word_list_done(l);
+                            l->next = NULL;
+                        }
+                        printf("%lc", c);
+                    }
+                    else
+                        printf("%ls%lc", wordCopy, c);
+                }
+            }
+            else {
+                printf("%lc", c);
+            }
+            i = 0;
+        }
+        if (c == '\n') {
+            letterLine++;
+            letterPosition = 1; 
+        }
     }
-    int c;
-    for (c = 0; c < COMMANDS_COUNT; ++c)
-        if (!strcmp(cmd, commands[c]))
-            break;
-    if (c == COMMANDS_COUNT)
-    {
-        fprintf(stderr, "Invalid command '%s'\n", cmd);
-        return ignored();
-    }
-    else if (c == QUIT)
-        return 0;
-    else if (c == CLEAR)
-    {
-        dictionary_done(*dict);
-        *dict = dictionary_new();
-        printf("cleared\n");
-        skip_line();
-        return 1;
-    }
-    else if (c < SAVE)
-    {
-        return dict_command(dict, c);
-    }
-    else
-    {
-        return file_command(dict, c);
-    }
+    word_list_done(l);
+    free(l);
 }
 
 /**
   Funkcja main.
   Główna funkcja programu do testowania słownika. 
- */
-int main(void) {
- 
+  */
+int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "pl_PL.UTF-8");
-    struct dictionary *dict = dictionary_new();
-    do {} while (try_process_command(&dict));
+    char *dictionary_name;
+    bool vMode = false;
+    //printf("%s \n", argv[1]);
+    if (argc == 2)
+        dictionary_name = argv[1];
+    else if (argc == 3) {
+        if ((argv[1][0] == '-') && (argv[1][1] == 'v')) {
+            vMode = true;
+            dictionary_name = argv[2];
+        }
+        else {
+            fprintf(stderr, "Wrong parameters. Try again.\n");
+            return 0;
+        }
+    }
+    else {
+        fprintf(stderr, "Wrong parameters. Try again.\n");
+        return 0;
+    }
+    struct dictionary *dict;// = dictionary_new();
+    FILE *f = fopen(dictionary_name, "r");
+    if (!f || !(dict = dictionary_load(f))) {
+        fprintf(stderr, "Failed to load dictionary\n");
+        exit(1);
+    }
+    fclose(f);
+    //printf("dictionary loaded from file %s\n", dictionary_name);
+    dict_check_command(dict, vMode);
+    if (vMode)
+        fprintf(stderr, "\n");
     dictionary_done(dict);
     return 0;
     

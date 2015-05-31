@@ -3,12 +3,11 @@
     Umożliwia edycję słownika.
   */
 /** @file
-    Główny plik modułu dict-editor
+    Główny plik modułu dict-editor.
     @ingroup dict-editor
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>
     @date 2015-05-11
     @copyright Uniwersytet Warszawski
-    @todo Poprawić proste parsowanie na porządniejsze.
   */
 
 #include "vector.h"
@@ -32,7 +31,7 @@
 
 /** Dostępne polecenia. 
     Odpowiadające komendy w tablicy @ref commands
- */
+  */
 enum Command {
     INSERT,
     DELETE,
@@ -74,7 +73,8 @@ static const char *commands[] =
 #define MAX_FILE_LENGTH 511
 
 
-/** Wczytuje wejście do napotkania znaku nowej linii.
+/**
+  Wczytuje wejście do napotkania znaku nowej linii.
   */
 void skip_line()
 {
@@ -88,8 +88,9 @@ void skip_line()
 }
 
 
-/** Ignoruje wiersz 
- */
+/**
+  Ignoruje wiersz 
+  */
 int ignored()
 {
     printf("ignored\n");
@@ -98,10 +99,11 @@ int ignored()
 }
 
 
-/** Zamienia słowo na złożone z małych liter.
+/** 
+  Zamienia słowo na złożone z małych liter.
   @param[in,out] word Modyfikowane słowo.
   @return 0, jeśli słowo nie jest złożone z samych liter, 1 w p.p.
- */
+  */
 int make_lowercase(wchar_t *word)
 {
     for (wchar_t *w = word; *w; ++w)
@@ -113,11 +115,12 @@ int make_lowercase(wchar_t *word)
 }
 
 
-/** Przetwarza komendę operującą na słowniku.
+/**
+  Przetwarza komendę operującą na słowniku.
   @param[in,out] dict Słownik, na którym wykonywane są operacje.
   @param[in] c Komenda.
   @return 0, jeśli należy zakończyć proram, 1 w p.p.
- */
+  */
 static int dict_command(struct dictionary **dict, enum Command c) 
 {
     wchar_t word[MAX_WORD_LENGTH+1];
@@ -155,6 +158,7 @@ static int dict_command(struct dictionary **dict, enum Command c)
             {
                 struct word_list list;
                 dictionary_hints(*dict, word, &list);
+                int i = word_list_size(&list);
                 const wchar_t * const *a = word_list_get(&list);
                 for (size_t i = 0; i < word_list_size(&list); ++i)
                 {
@@ -163,6 +167,7 @@ static int dict_command(struct dictionary **dict, enum Command c)
                     printf("%ls", a[i]);
                 }
                 printf("\n");
+                word_list_done(&list);
                 break;
             }
         default:
@@ -173,11 +178,12 @@ static int dict_command(struct dictionary **dict, enum Command c)
 }
 
 
-/** Przetwarza komendę operującą na plikach.
+/** 
+  Przetwarza komendę operującą na plikach.
   @param[in,out] dict Słownik, na którym wykonywane są operacje.
   @param[in] c Komenda.
   @return 0, jeśli należy zakończyć proram, 1 w p.p.
- */
+  */
 static int file_command(struct dictionary **dict, enum Command c) 
 {
     char filename[MAX_FILE_LENGTH+1];
@@ -224,10 +230,11 @@ static int file_command(struct dictionary **dict, enum Command c)
 
 
 
-/** Przetwarza jedną komendę.
+/** 
+  Przetwarza jedną komendę.
   @param[in,out] dict Słownik, na którym wykonywane są operacje
   @return 0, jeśli należy zakończyć proram, 1 w p.p.
- */
+  */
 int try_process_command(struct dictionary **dict)
 {
     char cmd[MAX_COMMAND_LENGTH+1];
@@ -272,7 +279,7 @@ int try_process_command(struct dictionary **dict)
 /**
   Funkcja main.
   Główna funkcja programu do testowania słownika. 
- */
+  */
 int main(void) {
  
     setlocale(LC_ALL, "pl_PL.UTF-8");
