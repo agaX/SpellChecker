@@ -9,15 +9,10 @@
  */
  
 #include "dictionary.h"
-#include "trie.h"
 #include "conf.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <locale.h>
-#include <string.h>
-#include <wctype.h>
-#include <wchar.h>
+#include <memory.h>
  
 #define _GNU_SOURCE
 
@@ -40,6 +35,10 @@ struct dictionary *dictionary_new()
     return dict;
 }
 
+/** 
+  Czyszczenie słownika
+  @param[in,out] dict Słownik, na którym wykonywane są operacje.
+  */
 static void dictionary_free(struct dictionary *dict)
 {
     if (dict->root->vector->size > 0)
@@ -47,15 +46,6 @@ static void dictionary_free(struct dictionary *dict)
     else
         node_free(dict->root);
     letter_list_done(dict->alphabet);
-}
-
-static void skip_equal(const wchar_t **a, const wchar_t **b)
-{
-    while (**a == **b && **a != L'\0')
-    {
-        (*a)++;
-        (*b)++;
-    }
 }
 
 void dictionary_done(struct dictionary *dict)
@@ -220,7 +210,6 @@ void words_to_check(const wchar_t *word, struct word_list *li, const struct dict
     wchar_t new_word[wlen + 1];
     struct letter_list *flunkey;
     int j;
-    ///Słowa powstałe przez usunięcie jednej z liter.
     for (int i = 0; i < wlen; i++) {
         for (int j = 0; j < i; j++)
             new_word[j] = word[j];
@@ -230,7 +219,6 @@ void words_to_check(const wchar_t *word, struct word_list *li, const struct dict
         if (dictionary_find(dict, new_word))
             word_list_add(li, new_word);  
     }
-    ///Słowa, które powstają przez dodanie dowolnej litery w dowolnym miejscu.
     flunkey = dict->alphabet;
     while (flunkey != NULL) {
         flunkey = flunkey->next;
@@ -250,7 +238,6 @@ void words_to_check(const wchar_t *word, struct word_list *li, const struct dict
                 word_list_add(li, new_word); 
         }
     }
-    ///Słowa powstałe przez zamianę jednej litery na dowolną inną.
     for (int i = 0; i < wlen; i++) {
         flunkey = dict->alphabet;
         while (flunkey != NULL) {
@@ -274,3 +261,66 @@ void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
     word_list_init(list);
     words_to_check(word, list, dict);
 }
+
+int dictionary_lang_list(char **list, size_t *list_len)
+{
+    int i, j;
+    int size = (size_t) list_len;
+    for (int i = 0; i < size; i++)
+        list[i] = '\0';
+    DIR *dir;
+    struct dirent *enter;
+    if ((dir = opendir(CONF_PATH)) == NULL)
+        return -1;
+    j = 0;
+    while ((enter = readdir (dir)) != NULL) {
+        i = 0;
+        if (enter->d_name[0] != '.') {
+            while (enter->d_name[i] != '\0') {
+                if (j >= size) {
+                    closedir(dir);
+                    return -1;
+                }
+                list[j++] = enter->d_name[i++];
+            }
+            if (j >= size) {
+                closedir(dir);
+                return -1;
+            }
+            list[j++] = '\0';
+        }
+    }
+    closedir(dir);
+    return 0;
+}
+
+struct dictionary * dictionary_load_lang(const char *lang)
+{
+    char *filename = (char *)malloc(2 + strlen(lang) + strlen(CONF_PATH));
+    strcpy(filename, CONF_PATH);
+    strcat(filename, "/");
+    strcat(filename, lang);
+    FILE *f = fopen(filename, "r");
+    struct dictionary *new_dict;
+    if (!f || !(new_dict = dictionary_load(f)))
+        return NULL;
+    fclose(f);
+    free(filename);
+    return new_dict;
+}
+
+int dictionary_save_lang(const struct dictionary *dict, const char *lang)
+{
+    char *filename = (char *)malloc(2 + strlen(lang) + strlen(CONF_PATH));
+    strcpy(filename, CONF_PATH);
+    strcat(filename, "/");
+    strcat(filename, lang);
+    FILE *f = fopen(filename, "w");
+    if (!f || dictionary_save(dict, f))
+        return -1;
+    fclose(f);
+    free(filename);
+    return 0;
+}
+
+

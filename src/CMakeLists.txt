@@ -47,7 +47,6 @@ add_subdirectory (dictionary)
 add_subdirectory (dict-editor)
 add_subdirectory (dict-check)
 
-
 # dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak:
 find_package (Doxygen)
 if (DOXYGEN_FOUND)

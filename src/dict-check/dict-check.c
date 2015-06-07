@@ -46,7 +46,8 @@ int make_lowercase(wchar_t *word)
 
 /**
   Przepisanie tekstu, wypisanie podpowiedzi.
-  @param[in]dict, słownik, na którym są wykonywane operacje.
+  @param[in] dict słownik na którym są wykonywane operacje.
+  @param[in] vMode parametr wejściowy.
   */
 static void dict_check_command(struct dictionary *dict, bool vMode) {
     wchar_t word[MAX_WORD_LENGTH + 1];
@@ -129,7 +130,6 @@ int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "pl_PL.UTF-8");
     char *dictionary_name;
     bool vMode = false;
-    //printf("%s \n", argv[1]);
     if (argc == 2)
         dictionary_name = argv[1];
     else if (argc == 3) {
@@ -146,14 +146,13 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Wrong parameters. Try again.\n");
         return 0;
     }
-    struct dictionary *dict;// = dictionary_new();
+    struct dictionary *dict;
     FILE *f = fopen(dictionary_name, "r");
     if (!f || !(dict = dictionary_load(f))) {
         fprintf(stderr, "Failed to load dictionary\n");
         exit(1);
     }
     fclose(f);
-    //printf("dictionary loaded from file %s\n", dictionary_name);
     dict_check_command(dict, vMode);
     dictionary_done(dict);
     return 0;

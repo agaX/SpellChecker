@@ -12,13 +12,10 @@
 
 #include <wchar.h>
 #include <stdio.h>
-#include <assert.h>
-#include <locale.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <wctype.h>
 #include <wchar.h>
+
 /**
   Maksymalna liczba słów przechowywana w liście słów.
   */
@@ -31,6 +28,7 @@
   */
 #define WORD_LIST_SUM 1024
 
+/// Maksymalny rozmiar słowa.
 #define MAX_WORD_SIZE 100
 
 /**
@@ -71,9 +69,7 @@ int word_list_add(struct word_list *list, const wchar_t *word);
 static inline
 size_t word_list_size(const struct word_list *list)
 {
-    //struct word_list *flunkey;
     int i = 0;
-    //flunkey = list;
     while (list != NULL) {
       list = list->next;
       i++;
@@ -83,7 +79,7 @@ size_t word_list_size(const struct word_list *list)
 
 /**
   Zwraca tablicę słów w liście.
-  @param[in] word_list Lista słów.
+  @param[in] list Lista słów.
   @return Tablica słów.
   */
 static inline

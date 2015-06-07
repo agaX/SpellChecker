@@ -17,27 +17,23 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <wchar.h>
+#include <dirent.h>
 
 /**
   Struktura przechowująca słownik.
   */
 typedef struct dictionary {
-    ///korzeń słownika
+    /// Korzeń słownika.
     struct Node *root;
+    /// Alfabet.
     struct letter_list *alphabet; 
 } dictionary;
 
 /** 
   Tworzenie słownika
-  @return dict - stworzony słownik z pierwszym węzłem (root).
+  @return dict stworzony słownik z pierwszym węzłem (root).
   */
 struct dictionary *dictionary_new(void);
-
-/** 
-  Czyszczenie słownika
-  @param[in,out] dict Słownik, na którym wykonywane są operacje.
-  */
-static void dictionary_free(struct dictionary *dict);
 
 /**
   Destrukcja słownika.
@@ -71,8 +67,8 @@ bool dictionary_find(const struct dictionary *dict, const wchar_t* word);
 
 /**
   Zapisanie słownika, każdy węzeł osobno
-  @param[in]node węzęł, który zostaje zapisany w danym wywołaniu
-  @param[in]stream plik, w którym zostaje zapisany węzeł
+  @param[in] node węzęł, który zostaje zapisany w danym wywołaniu
+  @param[in] stream plik, w którym zostaje zapisany węzeł
   @return 0, jeśli zapisanie się powiodło, -1 w p.p.
   */ 
 int dictionary_save_node(const struct Node *node, FILE* stream);
@@ -95,10 +91,9 @@ struct dictionary * dictionary_load(FILE* stream);
 
 /**
   Tworzenie wszystkich możliwych słów do hintsów.
-  @param[in]word słowo, dla którego powstaną hintsy.
-  @param[in]li lista słówm które mogą być hintsami (jeśli są w słowniku).
-  @param[in]n pierwszy węzeł słownika.
-  @param[in]l aktualny alfabet.
+  @param[in] word słowo dla którego powstaną hintsy.
+  @param[in] li lista słówm które mogą być hintsami (jeśli są w słowniku).
+  @param[in] dict pierwszy węzeł słownika.
   */ 
 void words_to_check(const wchar_t *word, struct word_list *li, const struct dictionary *dict);
 
@@ -130,7 +125,6 @@ void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
   */
 int dictionary_lang_list(char **list, size_t *list_len);
 
-
 /**
   Inicjuje i wczytuje słownik dla zadanego języka.
   Słownik ten należy zniszczyć za pomocą dictionary_done().
@@ -138,7 +132,6 @@ int dictionary_lang_list(char **list, size_t *list_len);
   @return Słownik dla danego języka lub NULL, jeśli operacja się nie powiedzie.
   */
 struct dictionary * dictionary_load_lang(const char *lang);
-
 
 /**
   Zapisuje słownik jak słownik dla ustalonego języka.

@@ -6,12 +6,9 @@
   @date 2015-05-29
  */
 
+#include "vector.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "vector.h"
-#include <assert.h>
-#include <locale.h>
-#include <string.h>
 #include <wctype.h>
 #include <wchar.h>
 
@@ -47,20 +44,43 @@ void insert_an_index(Vector *vector, Node *node, int index) {
 
 void vector_double_capacity_if_full(Vector *vector) {
   if (vector->size >= vector->capacity) {
-    // double vector->capacity and resize the allocated memory accordingly
     vector->capacity *= 2;
     vector->data = realloc(vector->data, sizeof(Node) * vector->capacity);
   }
 }
 
-void write_vector(Vector *vector) {
-    for (int i = 0; i < vector->size; i++) {
-        wprintf(L"%lc", vector->data[i]->letter);
+int where_in_vector(Vector *vector, wchar_t wch)
+{
+    if (vector->size == 0)
+        return -1;
+    int i = 0;
+    int j = vector->size-1;
+    int middle;
+    int cmp;
+    while (i < j) {
+        middle = (j+i) / 2;
+        cmp = wcsncmp(&vector->data[middle]->letter, &wch, 1);
+        if (cmp > 0)
+            j = middle;
+        else if (cmp < 0)
+            i = middle+1;
+        else{
+            return middle;
+        }
     }
-    printf("\n");
+    if ((i == vector->size-1) && (wcsncmp(&vector->data[i]->letter, &wch, 1) < 0))
+        i++;
+    return i;
 }
 
 void vector_free(Vector *vector) {
-  free(vector->data);
-  free(vector);
+    free(vector->data);
+    free(vector);
+}
+
+void node_free(struct Node *node)
+{
+    vector_free(node->vector);
+    free(node);
+    node = NULL;
 }
