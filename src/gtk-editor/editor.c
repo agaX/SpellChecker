@@ -51,12 +51,7 @@ int main (int argc, char *argv[]) {
   GtkWidget *box, *scroll, *menu;
   GtkAccelGroup *accel = NULL;
   
-  gunichar *wword = L"dupa";
-  gunichar *wword2 = L"lupa";
   dict = dictionary_new();
-  dictionary_insert(dict, wword);
-  dictionary_insert(dict, wword2);
-
 
   gtk_init(&argc, &argv);
   editor_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
