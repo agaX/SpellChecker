@@ -29,6 +29,8 @@ typedef struct dictionary {
     struct letter_list *alphabet; 
 } dictionary;
 
+int make_lowercase(wchar_t *word);
+
 /** 
   Tworzenie słownika
   @return dict stworzony słownik z pierwszym węzłem (root).

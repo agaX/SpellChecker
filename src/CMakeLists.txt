@@ -32,7 +32,7 @@ set(CMAKE_C_FLAGS_DEBUG "-std=gnu99 -Wall -pedantic -g")
 set(CMAKE_C_FLAGS_RELEASE "-std=gnu99 -O3")
 
 # wskazujemy na foldery, gdzie znajdują się pliki nagłówkowe.
-include_directories (dictionary ${CMAKE_BINARY_DIR})
+include_directories (dictionary gtk-editor ${CMAKE_BINARY_DIR})
 
 # ustawiamy, gdzie trzymać plik konfiguracyjny. Jeśli przy uruchamianiu CMake'a coś podano, już nie zmieniamy.
 if (NOT CONF_PATH)
@@ -46,6 +46,7 @@ configure_file(${CMAKE_SOURCE_DIR}/conf.h.in ${CMAKE_BINARY_DIR}/conf.h)
 add_subdirectory (dictionary)
 add_subdirectory (dict-editor)
 add_subdirectory (dict-check)
+add_subdirectory (gtk-editor)
 
 # dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak:
 find_package (Doxygen)
