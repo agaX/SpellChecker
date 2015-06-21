@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <sys/stat.h>
  
 #define _GNU_SOURCE
 
@@ -297,7 +298,7 @@ int dictionary_lang_list(char **list, size_t *list_len)
                     closedir(dir);
                     return -1;
                 }
-                list[j++] = enter->d_name[i++];
+                //list[j++] = enter->d_name[i++];
             }
             if (j >= size) {
                 closedir(dir);
@@ -318,8 +319,12 @@ struct dictionary * dictionary_load_lang(const char *lang)
     strcat(filename, lang);
     FILE *f = fopen(filename, "r");
     struct dictionary *new_dict;
-    if (!f || !(new_dict = dictionary_load(f)))
-        return NULL;
+    if (!f || !(new_dict = dictionary_load(f))) {
+        new_dict = dictionary_new();
+        dictionary_save_lang(new_dict, "default");
+        free(filename);
+        return new_dict;
+    }
     fclose(f);
     free(filename);
     return new_dict;
@@ -327,6 +332,11 @@ struct dictionary * dictionary_load_lang(const char *lang)
 
 int dictionary_save_lang(const struct dictionary *dict, const char *lang)
 {
+    struct stat st = {0};
+
+    if (stat(CONF_PATH, &st) == -1)
+        mkdir(CONF_PATH, 0700);
+
     char *filename = (char *)malloc(2 + strlen(lang) + strlen(CONF_PATH));
     strcpy(filename, CONF_PATH);
     strcat(filename, "/");

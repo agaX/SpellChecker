@@ -15,6 +15,7 @@ GtkTextBuffer *editor_buf;  // Textview buffer
 char *filename;
 
 struct dictionary *dict;
+char* dictionary_name;
 
 void show_about (void);
 void show_help (void);

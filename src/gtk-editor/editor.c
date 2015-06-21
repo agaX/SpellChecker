@@ -51,7 +51,8 @@ int main (int argc, char *argv[]) {
   GtkWidget *box, *scroll, *menu;
   GtkAccelGroup *accel = NULL;
   
-  dict = dictionary_new();
+  dictionary_name = "default";
+  dict = dictionary_load_lang(dictionary_name);
 
   gtk_init(&argc, &argv);
   editor_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -103,6 +104,10 @@ int main (int argc, char *argv[]) {
 
   // Start the main loop
   gtk_main();
+
+  // Save 
+  dictionary_save_lang(dict, dictionary_name);
+  dictionary_done(dict);
 
   return 0;  // for stupid compilers
 }

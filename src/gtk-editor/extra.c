@@ -13,6 +13,7 @@
 #include "editor.h"
 #include "word_list.h"
 #include "dictionary.h"
+#include "conf.h"
 
 void show_about () {
   GtkWidget *dialog = gtk_about_dialog_new();
@@ -50,18 +51,55 @@ void show_help (void) {
   gtk_widget_show_all(help_window);
 }
 
-void load_dictionary_from_menu(struct dictionary *dict) {
-  FILE *f = fopen(filename, "dupny");
-  struct dictionary *new_dict;
-  if (!f || !(new_dict = dictionary_load(f)))
-  {
-      fprintf(stderr, "Failed to load dictionary\n");
-      exit(1);
+/**
+  Wyświetlenie listy dostępnych słowników i wczytanie jednego z nich.
+  @param[in] item element menu.
+  @param[in] data wskaźnik na wartość.
+  */
+void load_dictionary_from_menu(GtkMenuItem *item, gpointer data) {
+  GtkWidget *dialog;
+  GtkWidget *vbox, *label, *combo;
+  dialog = gtk_dialog_new_with_buttons("Wczytaj słownik", NULL, 0, 
+                                       GTK_STOCK_OK,
+                                       GTK_RESPONSE_ACCEPT,
+                                       GTK_STOCK_CANCEL,
+                                       GTK_RESPONSE_REJECT,
+                                       NULL);
+  // W treści dialogu dwa elementy
+  vbox = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+  // Tekst
+  label = gtk_label_new("Lista dostępnych słowników:");
+  gtk_widget_show(label);
+  gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 1);
+
+  // Spuszczane menu
+  combo = gtk_combo_box_text_new();
+    char **list;
+    int size = 10000;
+    int i, j;
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir(CONF_PATH)) != NULL) {
+      while ((ent = readdir(dir)) != NULL) {
+        if (ent->d_name[0] != '.')
+          gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), ent->d_name);
+      }
+      closedir(dir);
+    }
+  gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+  gtk_box_pack_start(GTK_BOX(vbox), combo, FALSE, FALSE, 1);
+  gtk_widget_show(combo);
+
+  gint click = gtk_dialog_run(GTK_DIALOG(dialog));
+
+  if (click == GTK_RESPONSE_ACCEPT) {
+    dictionary_save_lang(dict, dictionary_name);
+    dictionary_name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
+    dictionary_done(dict);
+    dict = dictionary_load_lang(dictionary_name);
+    printf("%s\n", dictionary_name);
   }
-  fclose(f);
-  printf("dictionary loaded from file %s\n", filename);
-  dictionary_done(dict);
-  dict = new_dict;
+  gtk_widget_destroy(dialog);
 }
 
 /**
@@ -122,7 +160,7 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
       wchar_t **words;
 
       dictionary_hints(dict, (wchar_t *)wword, &hints);
-      words = word_list_get(&hints);
+      words = (wchar_t **) word_list_get(&hints);
       dialog = gtk_dialog_new_with_buttons("Korekta", NULL, 0, 
                                            GTK_STOCK_OK,
                                            GTK_RESPONSE_ACCEPT,
@@ -232,7 +270,7 @@ void extend_menu (GtkWidget *menubar) {
 
   load_dictionary_item = gtk_menu_item_new_with_label("Load Dictionary");
   g_signal_connect(G_OBJECT(load_dictionary_item), "activate", 
-                   G_CALLBACK(WhatCheck), NULL);
+                   G_CALLBACK(load_dictionary_from_menu), NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(spell_menu), load_dictionary_item);
   gtk_widget_show(load_dictionary_item);
 
