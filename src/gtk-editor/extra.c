@@ -74,30 +74,24 @@ void load_dictionary_from_menu(GtkMenuItem *item, gpointer data) {
 
   // Spuszczane menu
   combo = gtk_combo_box_text_new();
-    char **list;
-    int size = 10000;
-    int i, j;
-    DIR *dir;
-    struct dirent *ent;
-    if ((dir = opendir(CONF_PATH)) != NULL) {
-      while ((ent = readdir(dir)) != NULL) {
-        if (ent->d_name[0] != '.')
-          gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), ent->d_name);
-      }
-      closedir(dir);
+  DIR *dir;
+  struct dirent *ent;
+  if ((dir = opendir(CONF_PATH)) != NULL) {
+    while ((ent = readdir(dir)) != NULL) {
+      if (ent->d_name[0] != '.')
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), ent->d_name);
     }
+    closedir(dir);
+  }
   gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
   gtk_box_pack_start(GTK_BOX(vbox), combo, FALSE, FALSE, 1);
   gtk_widget_show(combo);
 
-  gint click = gtk_dialog_run(GTK_DIALOG(dialog));
-
-  if (click == GTK_RESPONSE_ACCEPT) {
+  if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
     dictionary_save_lang(dict, dictionary_name);
     dictionary_name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
     dictionary_done(dict);
     dict = dictionary_load_lang(dictionary_name);
-    printf("%s\n", dictionary_name);
   }
   gtk_widget_destroy(dialog);
 }
